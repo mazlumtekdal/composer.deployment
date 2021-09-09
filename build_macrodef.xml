@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="DeployWithMacroDef" default="deploy" basedir=".">
+	<property file="build.properties"/>
+	<property name="war-file-name" value="${project-name}.war"/>
+	<property name="build-directory" value="${build-directory}"/>
+	<path id="catalina-ant-classpath">
+		<fileset dir="${catalina-ant-dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	<taskdef name="deploy" classname="org.apache.catalina.ant.DeployTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="list" classname="org.apache.catalina.ant.ListTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="reload" classname="org.apache.catalina.ant.ReloadTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="findleaks" classname="org.apache.catalina.ant.FindLeaksTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="resources" classname="org.apache.catalina.ant.ResourcesTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="start" classname="org.apache.catalina.ant.StartTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="stop" classname="org.apache.catalina.ant.StopTask" classpathref="catalina-ant-classpath"/>
+	<taskdef name="undeploy" classname="org.apache.catalina.ant.UndeployTask" classpathref="catalina-ant-classpath"/>
+	<target name="clean">
+		<delete file="${build-directory}/${war-file-name}" failonerror="false"/>
+	</target>
+	<target depends="clean" name="create-war">
+		<war destfile="${build-directory}/${war-file-name}" duplicate="fail" webxml="./WEB-INF/web.xml">
+			<fileset dir="./" excludes="target/* target/*/* Callflows/* Workflows/* Interaction*/* debugging-results/*/* .project .settings/* **/web.xml">
+				<exclude name="**/*.callflow"/>
+				<exclude name="**/*.workflow"/>
+				<exclude name="**/*.ixnprocess"/>
+			</fileset>
+		</war>
+	</target>
+	<target depends="create-war" name="deploy" description="deploy to tomcat">
+		<deployMacro 
+			url="${tomcat-manager-url1}" 
+			username="${tomcat-manager-username1}"
+			password="${tomcat-manager-password1}" />
+		<deployMacro 
+			url="${tomcat-manager-url2}" 
+			username="${tomcat-manager-username2}"
+			password="${tomcat-manager-password2}" />
+		<deployMacro 
+			url="${tomcat-manager-url3}" 
+			username="${tomcat-manager-username3}"
+			password="${tomcat-manager-password3}" />
+	</target >
+	<macrodef name="deployMacro">
+		<attribute name="url" />
+		<attribute name="username" />
+		<attribute name="password" />
+		<sequential>
+			<echo>deploying to server @{url} </echo>
+			<echo>project-name ${project-name} </echo>
+			<echo>tomcat uri :@{url}</echo>
+			<echo>tomcat username :@{username}</echo>
+			<echo>tomcat password :@{password}</echo>
+			<echo>war file : ${build-directory}/${war-file-name} </echo>
+			<!-- undeploy application -->
+			<undeploy url="@{url}" username="@{username}" password="@{password}" path="/${project-name}" failonerror="false"/>
+			<!-- deploy application -->
+			<deploy url="@{url}" username="@{username}" password="@{password}" path="/${project-name}" war="file:/${build-directory}/${war-file-name}"/>
+			<echo>@{url} package loaded </echo>
+			<!--     reload application  -->
+			<reload url="@{url}" username="@{username}" password="@{password}" path="/${project-name}"/>
+		</sequential>
+	</macrodef>
+</project>
